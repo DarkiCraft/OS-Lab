@@ -21,11 +21,11 @@ int pipe(int pipe_fd[2]);
 // - EPERM  - The process does not have permission to create a pipe.
 //
 // Usage:
-// int pipe_fd[2];
-// if (pipe(pipe_fd) == -1) {
-//     perror("pipe");
-//     exit(EXIT_FAILURE);
-// }
+//   int pipe_fd[2];
+//   if (pipe(pipe_fd) == -1) {
+//       perror("pipe");
+//       exit(EXIT_FAILURE);
+//   }
 //
 // pipe_fd[0] is the read end, pipe_fd[1] is the write end
 // Use pipe_fd[0] to read and pipe_fd[1] to write.
@@ -47,6 +47,24 @@ const int BUFFER_SIZE = 1024;
 const int READ_END    = 0;
 const int WRITE_END   = 1;
 
+// Error handling utilities as functions
+void handle_error(const char* msg) {
+  perror(msg);
+  exit(EXIT_FAILURE);
+}
+
+void check_result(int result, const char* msg) {
+  if (result == -1) {
+    handle_error(msg);
+  }
+}
+
+void check_pointer(void* ptr, const char* msg) {
+  if (ptr == NULL) {
+    handle_error(msg);
+  }
+}
+
 // Since pipes do not guarantee all the data is read in one go, we can use loops to ensure complete read/write
 ssize_t write_all(int fd, const void* buffer, size_t bytes) {
   size_t total    = 0;
@@ -60,7 +78,6 @@ ssize_t write_all(int fd, const void* buffer, size_t bytes) {
   }
   return total;
 }
-
 ssize_t read_all(int fd, void* buffer, size_t bytes) {
   size_t total = 0;
   char* ptr    = buffer;
@@ -74,101 +91,85 @@ ssize_t read_all(int fd, void* buffer, size_t bytes) {
   return total;
 }
 
-// Program to send numbers from child to parent. Asks for user input
-int main() {
-  int fd[2];
-  if (pipe(fd) == -1) {
-    perror("pipe");
+// Function to handle child process logic
+void child_process(int write_fd) {
+  int num;
+  (void)printf("Enter number of elements: ");
+  if (scanf("%d", &num) != 1) {
+    fprintf(stderr, "Invalid input.\n");
     exit(EXIT_FAILURE);
   }
+
+  if (num <= 0 || num > (int)(BUFFER_SIZE / sizeof(int))) {
+    fprintf(stderr, "0 < num < %d\n", (int)(BUFFER_SIZE / sizeof(int) + 1));
+    exit(EXIT_FAILURE);
+  }
+
+  int* arr = (int*)malloc(num * sizeof(int));
+  check_pointer(arr, "malloc");
+
+  (void)printf("Enter %d numbers: ", num);
+  for (size_t i = 0; i < (size_t)num; i++) {
+    if (scanf("%d", &arr[i]) != 1) {
+      fprintf(stderr, "Invalid input.\n");
+      free(arr);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // Write the number of elements
+  if (write_all(write_fd, &num, sizeof(int)) == -1) {
+    free(arr);
+    handle_error("write_all");
+  }
+
+  // Write all numbers from array
+  if (write_all(write_fd, arr, num * sizeof(int)) == -1) {
+    free(arr);
+    handle_error("write_all");
+  }
+
+  free(arr);
+}
+
+// Function to handle parent process logic
+void parent_process(int read_fd) {
+  int num;
+
+  // Read number of elements
+  check_result(read_all(read_fd, &num, sizeof(int)), "read_all");
+
+  int* arr = (int*)malloc(num * sizeof(int));
+  check_pointer(arr, "malloc");
+
+  // Read all numbers to array
+  check_result(read_all(read_fd, arr, num * sizeof(int)), "read_all");
+
+  for (size_t i = 0; i < (size_t)num; i++) {
+    (void)printf("%d ", arr[i]);
+  }
+  (void)putchar('\n');
+
+  free(arr);
+  check_result(wait(NULL), "wait");
+}
+
+// Program to send numbers from child to parent
+int main() {
+  int fd[2];
+  check_result(pipe(fd), "pipe");
 
   pid_t pid;
   pid = fork();
+  check_result(pid, "fork");
 
-  if (pid == -1) {
-    perror("fork");
-    exit(EXIT_FAILURE);
-  }
-
-  if (pid == 0) {
-    close(fd[READ_END]);
-
-    int num;
-    printf("Enter number of elements: ");
-    if (scanf("%d", &num) != 1) {
-      fprintf(stderr, "Invalid input.\n");
-      exit(EXIT_FAILURE);
-    }
-
-    if (num <= 0 || num > (int)(BUFFER_SIZE / sizeof(int))) {
-      fprintf(stderr, "0 < num < %d\n", (int)(BUFFER_SIZE / sizeof(int) + 1));
-      exit(EXIT_FAILURE);
-    }
-
-    int* arr = (int*)malloc(num * sizeof(int));
-    if (arr == NULL) {
-      perror("malloc");
-      exit(EXIT_FAILURE);
-    }
-
-    printf("Enter %d numbers: ", num);
-    for (size_t i = 0; i < (size_t)num; i++) {
-      if (scanf("%d", &arr[i]) != 1) {
-        fprintf(stderr, "Invalid input.\n");
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    // Write the number of elements
-    if (write_all(fd[WRITE_END], &num, sizeof(int)) == -1) {
-      perror("write_all");
-      free(arr);
-      exit(EXIT_FAILURE);
-    }
-
-    // Write all numbers from array
-    ssize_t bytes_written = write_all(fd[WRITE_END], arr, num * sizeof(int));
-    if (bytes_written == -1) {
-      perror("write_all");
-      free(arr);
-      exit(EXIT_FAILURE);
-    }
-
-    free(arr);
-
-    close(fd[WRITE_END]);
-  } else {
-    close(fd[WRITE_END]);
-
-    int num;
-
-    // Read number of elements
-    if (read_all(fd[READ_END], &num, sizeof(int)) == -1) {
-      perror("read_all");
-      exit(EXIT_FAILURE);
-    }
-
-    int* arr = (int*)malloc(num * sizeof(int));
-    if (arr == NULL) {
-      perror("malloc");
-      exit(EXIT_FAILURE);
-    }
-
-    // Read all numbers to array
-    ssize_t bytes_read = read_all(fd[READ_END], arr, num * sizeof(int));
-    if (bytes_read == -1) {
-      perror("read_all");
-      exit(EXIT_FAILURE);
-    }
-
-    for (size_t i = 0; i < (size_t)num; i++) {
-      printf("%d ", arr[i]);
-    }
-    putchar('\n');
-
-    free(arr);
-    close(fd[READ_END]);
-
-    wait(NULL);
+  if (pid == 0) {  // Child process
+    check_result(close(fd[READ_END]), "close");
+    child_process(fd[WRITE_END]);
+    check_result(close(fd[WRITE_END]), "close");
+  } else {  // Parent process
+    check_result(close(fd[WRITE_END]), "close");
+    parent_process(fd[READ_END]);
+    check_result(close(fd[READ_END]), "close");
   }
 }
