@@ -1,8 +1,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>  // for pause()
 
@@ -47,63 +45,45 @@
 //
 // Search sigaction(2) for more information
 
-// SIGUSR1 handler
-void usr1_handler(int sig) {
+void handle_sigchld(int sig) {
   (void)sig;
-  printf("Parent: Received SIGUSR1 from child\n");
+  int status;
+  pid_t pid = wait(&status);  // Reap child
+  printf("Parent: Received SIGCHLD — child %d exited\n", pid);
 }
 
-// SIGINT handler
-void sigint_handler(int sig) {
+void handle_sigint(int sig) {
   (void)sig;
-  printf("Parent: Caught SIGINT (Ctrl + C). Exiting...\n");
-  exit(EXIT_SUCCESS);
+  printf("Parent: Caught SIGINT, exiting...\n");
+  exit(0);
 }
 
 int main() {
-  pid_t pid;
-
-  // Set up SIGUSR1 handler
-  struct sigaction sa_usr1;
-  memset(&sa_usr1, 0, sizeof(sa_usr1));
-  sa_usr1.sa_handler = usr1_handler;
-  sigemptyset(&sa_usr1.sa_mask);
-  sa_usr1.sa_flags = 0;
-  if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1) {
-    perror("sigaction - SIGUSR1");
-    exit(EXIT_FAILURE);
+  // Set SIGCHLD handler
+  struct sigaction sa_chld;
+  sa_chld.sa_handler = handle_sigchld;
+  sigemptyset(&sa_chld.sa_mask);
+  sa_chld.sa_flags = 0;
+  if (sigaction(SIGCHLD, &sa_chld, NULL) == -1) {
+    perror("sigaction(SIGCHLD)");
+    exit(1);
   }
 
-  // Set up SIGINT handler
-  struct sigaction sa_int;
-  memset(&sa_int, 0, sizeof(sa_int));
-  sa_int.sa_handler = sigint_handler;
-  sigemptyset(&sa_int.sa_mask);
-  sa_int.sa_flags = 0;
-  if (sigaction(SIGINT, &sa_int, NULL) == -1) {
-    perror("sigaction - SIGINT");
-    exit(EXIT_FAILURE);
-  }
+  // Set SIGINT handler
+  signal(SIGINT, handle_sigint);  // using signal() for simplicity
 
-  pid = fork();
-  if (pid == -1) {
-    perror("fork");
-    exit(EXIT_FAILURE);
-  }
-
+  pid_t pid = fork();
   if (pid == 0) {
     // Child process
-    printf("Child: Sleeping for 2 seconds...\n");
-    sleep(2);
-    printf("Child: Sending SIGUSR1 to parent (PID %d)\n", getppid());
-    kill(getppid(), SIGUSR1);  // kill() is used to send signals (stupid naming, I know)
+    printf("Child: Sleeping for 3 seconds\n");
+    sleep(3);
     printf("Child: Exiting\n");
-    exit(EXIT_SUCCESS);
-  } else {
-    // Parent process
-    printf("Parent: Waiting for signal from child (PID %d)...\n", pid);
-    wait(NULL);  // Wait for child to finish
-    printf("Parent: Child exited. Now waiting for SIGINT (Ctrl + C)...\n");
-    while (1) pause();  // Wait for SIGINT to exit
+    exit(0);
+  }
+
+  // Parent process
+  printf("Parent: Waiting for child to exit (SIGCHLD). Press Ctrl + C to exit\n");
+  while (1) {
+    pause();  // wait for signals
   }
 }
