@@ -7,7 +7,8 @@
 #include <sys/wait.h>   // for wait()
 #include <unistd.h>     // for unlink(), read(), write(), close()
 
-int mkfifo(const char* path_name, mode_t mode);
+//--------------------------------------------------------------------------------
+// int mkfifo(const char* path_name, mode_t mode);
 // Brief: Creates a named pipe (FIFO) for inter-process communication.
 //
 // Parameters:
@@ -40,8 +41,8 @@ int mkfifo(const char* path_name, mode_t mode);
 // - The FIFO file will persist in the filesystem until unlinked.
 //
 // Search mkfifo(2) for more information about named pipes and file permissions.
-
-int unlink(const char* path_name);
+//--------------------------------------------------------------------------------
+// int unlink(const char* path_name);
 // Brief: Removes a file or a named pipe (FIFO) from the filesystem.
 //
 // Parameters:

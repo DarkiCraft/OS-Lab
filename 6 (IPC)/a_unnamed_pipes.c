@@ -4,12 +4,13 @@
 #include <sys/wait.h>   // for wait()
 #include <unistd.h>     // for pipe(), read(), write(), close()
 
-int pipe(int pipe_fd[2]);
+//--------------------------------------------------------------------------------
+// int pipe(int pipe_fd[2]);
 // Brief: Creates an unnamed pipe for inter-process communication.
 //
-// Paramters: pipe_fd An array of two integers that will be filled with the file descriptors for the pipe.
-//                    - pipe_fd[0]: the read end of the pipe.
-//                    - pipe_fd[1]: the write end of the pipe.
+// Paramters: - pipe_fd An array of two integers that will be filled with the file descriptors for the pipe.
+//                     -> pipe_fd[0]: the read end of the pipe.
+//                     -> pipe_fd[1]: the write end of the pipe.
 //
 // Returns: 0 on success; -1 on failure, setting errno to indicate the error.
 //
@@ -24,7 +25,7 @@ int pipe(int pipe_fd[2]);
 //   int pipe_fd[2];
 //   if (pipe(pipe_fd) == -1) {
 //       perror("pipe");
-//       exit(EXIT_FAILURE);
+//       // handle error accordingly
 //   }
 //
 // pipe_fd[0] is the read end, pipe_fd[1] is the write end
@@ -42,6 +43,7 @@ int pipe(int pipe_fd[2]);
 // - Always ensure that file descriptors are closed after use to avoid resource leakage.
 //
 // Search pipe(2) for more information about file descriptors and process communication.
+//--------------------------------------------------------------------------------
 
 const int BUFFER_SIZE = 1024;
 const int READ_END    = 0;
