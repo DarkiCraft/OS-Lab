@@ -4,8 +4,7 @@
 #include <sys/wait.h>
 #include <unistd.h>  // for pause()
 
-// int sigaction
-
+//--------------------------------------------------------------------------------
 // int sigaction (int sig, const struct sigaction* new_act, struct sigaction* old_act);
 // Brief: Sets a callable function when a signal is detected by a thread (preferred over signal())
 //
@@ -44,6 +43,7 @@
 // - A child created via fork() will inherit parent's signal dispositions
 //
 // Search sigaction(2) for more information
+//--------------------------------------------------------------------------------
 
 void handle_sigchld(int sig) {
   (void)sig;

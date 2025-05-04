@@ -3,11 +3,12 @@
 #include <stdlib.h>
 #include <unistd.h>  // for pause()
 
+//--------------------------------------------------------------------------------
 // Basics:
 // - When a signal is raised, it is sent to ALL threads
 // - A thread may block, ignore, or call a custom signal handler
 // - Signals may be sent via kill(), pthread_kill() in the program or via the terminal
-
+//--------------------------------------------------------------------------------
 // int signal(int sig, void (*sighandler)(int));
 // Brief: Sets a callable function when a signal is detected by a thread
 //
@@ -44,6 +45,7 @@
 // - Using signal() in multithreaded programs is undefined
 //
 // Search signal(2) for more information
+//--------------------------------------------------------------------------------
 
 void signal_handler(int sig) {
   (void)sig;
