@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 //--------------------------------------------------------------------------------
-// Mutex (Mutual Exclusion)
+// Basics:
 // - Mutexes are used to prevent race conditions by allowing only one thread to access a critical section at a time
 //   -> A thread locks the mutex before entering the critical section.
 //   -> Once done, the thread unlocks the mutex, allowing other threads to enter.
@@ -33,7 +33,7 @@
 // - EINVAL - mutex is an invalid object, or attr is an invalid object
 // - EAGAIN - system lacks resources (other than memory) to initialize mutex object
 // - ENOMEM - system lacks memory initialize mutex object
-// - EPERM  - lack of permissions to perform the necessary operation
+// - EPERM  - current thread does not own the mutex
 //
 // Usage:
 //   pthread_mutex_t mutex;
