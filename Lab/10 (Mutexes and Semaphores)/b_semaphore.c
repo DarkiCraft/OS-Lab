@@ -89,34 +89,6 @@
 //
 // Search sem_getvalue(3) for more information
 //--------------------------------------------------------------------------------
-// int sem_getvalue(sem_t* sem, int* sval);
-// Brief: Retrieve the current value of a semaphore
-//
-// Parameters:
-//   sem  - Pointer to a valid semaphore object
-//   sval - Pointer to an integer to store the value
-//
-// Returns: 0 on success; -1 on error, and errno is set
-//
-// Errors:
-// - EINVAL - sem or sval is invalid
-//
-// Usage:
-//   int sval;
-//   if (sem_getvalue(&sem, &sval) == -1) {
-//     perror("sem_getvalue");
-//     // handle error
-//   } else {
-//     printf("Current semaphore value: %d\n", sval);
-//   }
-//
-// Notes:
-// - The value reported may be outdated immediately after retrieval
-// - If threads are blocked in sem_wait, the value may be negative (e.g., -N)
-// - Use for debugging or informative purposes only, not synchronization logic
-//
-// Search sem_getvalue(3) for more information
-//--------------------------------------------------------------------------------
 // int sem_post(sem_t* sem);
 // Brief: Increment (unlock) a semaphore
 //
